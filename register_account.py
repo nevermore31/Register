@@ -6,7 +6,7 @@ import pprint
 import json
 
 from requests.exceptions import HTTPError
-from requests.utils import dict_from_cookiejar
+from requests.utils import dict_from_cookiejar, cookiejar_from_dict
 from bs4 import BeautifulSoup
 from user_agent import user_agent
 from aes import AesJs
@@ -17,48 +17,38 @@ agent = random.choice(user_agent)
 # 注册页面请求头
 headers_regist = {
     'Connection': 'keep-alive',
-    'Cookie': 'FO_RFLP=aHR0cDovL21pY3JvLjUxLmNvbS9jbGllbnQvaW5kZXgvaHkvP2Zyb209d2RoeSZzaXRlX2Nzcz0%3D%7CaHR0cDo'
-              'vL21pY3JvLjUxLmNvbS9jbGllbnQvcmVnL2h5Lz9mcm9tPXdkaHkmc2l0ZV9jc3M9%7C%7C%7C; FO_TUID=sN1hfZ; '
-              'PHPSESSID=sducvqmjirc9gorbsncqf30l35; _nei_from=port_wdhy; wd_in_hy=5bbd647d9a54b9.40824442; FO_'
-              'JSONP_TOKEN=e1b04dc7f2a66e1467934304128dae54; FO_JSONP_TIME={}; 5bbd5d2273cca=1539139004'
-              '_8d94e2a9acb4f7831074a9fcbe72a5c8'.format(int(time.time())),
     'Host': 'passport.51.com',
     'Referer': 'http://micro.51.com/client/reg/hy/?from=wdhy&site_css=',
+    'Cookie':'wd_in_hy=5ba5bacf1fc166.19814741; FO_USER=dadaada223232; 51uids=453996290%2C453808427%7C264b8918b6b43f110ac4eb4417afd4cb; FO_TUID=qRrxZm; PHPSESSID=a6r0noh0mk2ocmvgs3lcdjfb95; 5bbe05e29b8e5=1539180261_4ed45a9cd181d1193404c7c27a758808; s_454050493=454050493%7Cdadadadada11111%7C2018-10-10+23%3A18%3A10%7Cport_wdhy; FO_JSONP_TOKEN=da113af13e02c3976d66cc391ae62396; FO_JSONP_TIME=1539186263; s_454050618=454050618%7Cwixiw123%7C2018-10-10+23%3A44%3A24%7Cport_wdhy; 5bbe13f2b2de3=1539186265_98dfa2c8a83ac72118d0d6faadcd9c5f; FO_USER=wixiw123; FO_RFLP=aHR0cDovL21pY3JvLjUxLmNvbS9jbGllbnQvaW5kZXgvaHkvP2Zyb209d2RoeSZzaXRlX2Nzcz0%3D%7CaHR0cDovL21pY3JvLjUxLmNvbS9jbGllbnQvaW5kZXgvaHkvP2Zyb209d2RoeSZzaXRlX2Nzcz0%3D%7C%7C%7C; 5bbe1e7db15d9=1539186605_c844585d683f184d9418be2b235ba3fe; _nei_from=port_wdhy',
     'User-Agent': agent}
 
 # 获取key iv 请求头
 headers_key_iv = {
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
             'Connection': 'keep-alive',
-            'Cookie': 'FO_RFLP=aHR0cDovL21pY3JvLjUxLmNvbS9jbGllbnQvaW5kZXgvaHkvP2Zyb209d2RoeSZzaXRlX2Nzcz0%3D%7CaHR0cDo'
-                      'vL21pY3JvLjUxLmNvbS9jbGllbnQvcmVnL2h5Lz9mcm9tPXdkaHkmc2l0ZV9jc3M9%7C%7C%7C; FO_TUID=sN1hfZ; '
-                      'PHPSESSID=sducvqmjirc9gorbsncqf30l35; _nei_from=port_wdhy; wd_in_hy=5bbd647d9a54b9.40824442; FO_'
-                      'JSONP_TOKEN=e1b04dc7f2a66e1467934304128dae54; FO_JSONP_TIME={}; 5bbd5d2273cca=1539139004'
-                      '_8d94e2a9acb4f7831074a9fcbe72a5c8'.format(int(time.time())),
             'Host': 'micro.51.com',
             'Referer': 'http://micro.51.com/client/index/hy/?from=wdhy&site_css=',
             'Upgrade-Insecure-Requests': '1',
-            'User-Agent': agent
-        }
+            'User-Agent': agent,
+    'Cookie': 'wd_in_hy=5ba5bacf1fc166.19814741; FO_USER=dadaada223232; 51uids=453996290%2C453808427%7C264b8918b6b43f110ac4eb4417afd4cb; FO_TUID=qRrxZm; PHPSESSID=a6r0noh0mk2ocmvgs3lcdjfb95; 5bbe05e29b8e5=1539180261_4ed45a9cd181d1193404c7c27a758808; s_454050493=454050493%7Cdadadadada11111%7C2018-10-10+23%3A18%3A10%7Cport_wdhy; FO_JSONP_TOKEN=da113af13e02c3976d66cc391ae62396; FO_JSONP_TIME=1539186263; s_454050618=454050618%7Cwixiw123%7C2018-10-10+23%3A44%3A24%7Cport_wdhy; 5bbe13f2b2de3=1539186265_98dfa2c8a83ac72118d0d6faadcd9c5f; FO_USER=wixiw123; FO_RFLP=aHR0cDovL21pY3JvLjUxLmNvbS9jbGllbnQvaW5kZXgvaHkvP2Zyb209d2RoeSZzaXRlX2Nzcz0%3D%7CaHR0cDovL21pY3JvLjUxLmNvbS9jbGllbnQvaW5kZXgvaHkvP2Zyb209d2RoeSZzaXRlX2Nzcz0%3D%7C%7C%7C; 5bbe1e7db15d9=1539186605_c844585d683f184d9418be2b235ba3fe; _nei_from=port_wdhy'
+
+}
+
 # 请勿改动，否则无法访问该接口
 headers_account = {
             'Accept': '*/*',
             'Connection': 'keep-alive',
-            'Cookie': 'FO_RFLP=aHR0cDovL21pY3JvLjUxLmNvbS9jbGllbnQvaW5kZXgvaHkvP2Zyb209d2RoeSZzaXRlX2Nzcz0%3D%7CaHR0cDo'
-                      'vL21pY3JvLjUxLmNvbS9jbGllbnQvcmVnL2h5Lz9mcm9tPXdkaHkmc2l0ZV9jc3M9%7C%7C%7C; FO_TUID=sN1hfZ; '
-                      'PHPSESSID=sducvqmjirc9gorbsncqf30l35; _nei_from=port_wdhy; wd_in_hy=5bbd647d9a54b9.40824442; FO_'
-                      'JSONP_TOKEN=e1b04dc7f2a66e1467934304128dae54; FO_JSONP_TIME={}; 5bbd5d2273cca=1539139004'
-                      '_8d94e2a9acb4f7831074a9fcbe72a5c8'.format(int(time.time())),
             'Host': 'passport.51.com',
             'Origin': 'http://passport.51.com',
             'Referer': 'http://passport.51.com/login/proxy',
-            'User-Agent': agent
-        }
+            'User-Agent': agent,
+    'Cookie': 'wd_in_hy=5ba5bacf1fc166.19814741; FO_USER=dadaada223232; 51uids=453996290%2C453808427%7C264b8918b6b43f110ac4eb4417afd4cb; FO_TUID=qRrxZm; PHPSESSID=a6r0noh0mk2ocmvgs3lcdjfb95; 5bbe05e29b8e5=1539180261_4ed45a9cd181d1193404c7c27a758808; s_454050493=454050493%7Cdadadadada11111%7C2018-10-10+23%3A18%3A10%7Cport_wdhy; FO_JSONP_TOKEN=da113af13e02c3976d66cc391ae62396; FO_JSONP_TIME=1539186263; s_454050618=454050618%7Cwixiw123%7C2018-10-10+23%3A44%3A24%7Cport_wdhy; 5bbe13f2b2de3=1539186265_98dfa2c8a83ac72118d0d6faadcd9c5f; FO_USER=wixiw123; FO_RFLP=aHR0cDovL21pY3JvLjUxLmNvbS9jbGllbnQvaW5kZXgvaHkvP2Zyb209d2RoeSZzaXRlX2Nzcz0%3D%7CaHR0cDovL21pY3JvLjUxLmNvbS9jbGllbnQvaW5kZXgvaHkvP2Zyb209d2RoeSZzaXRlX2Nzcz0%3D%7C%7C%7C; 5bbe1e7db15d9=1539186605_c844585d683f184d9418be2b235ba3fe; _nei_from=port_wdhy'
+}
 
 
 class Register(object):
     def __init__(self):
-        self.session = requests.Session()
+        self.session = requests.session()
         self.headers_regist = headers_regist
         self.headers_key_iv = headers_key_iv
         self.headers_account = headers_account
@@ -76,6 +66,8 @@ class Register(object):
     def get_key_iv(self):
         start_url = 'http://micro.51.com/client/reg/hy/?from=wdhy&site_css='
         req = self.session.get(start_url)
+        cookies = dict_from_cookiejar(req.cookies)
+        print(req.cookies)
         if req.status_code != 200:
             raise HTTPError
         soup = BeautifulSoup(req.text, 'lxml')
@@ -90,7 +82,7 @@ class Register(object):
         iv_index = str(data).index('iv')
         iv = str(data)[iv_index - 33:iv_index - 1]
         self.validator(iv)
-        item = {'key': key, 'iv': iv}
+        item = {'key': key, 'iv': iv, 'cookies': cookies}
         return item
 
     def _get_time(self):
@@ -112,6 +104,7 @@ class Register(object):
             'user': str(account)
         }
         req = self.session.post(url=url, headers=self.headers_account, data=data_)
+        print(req.cookies)
         if req.status_code == 200:
             respons = json.loads(req.text)
             print(respons)
@@ -130,7 +123,7 @@ class Register(object):
         password_ht = self.aes.js_gethl(pass_)
 
         # 注册账号请求信息
-        url_querty = {
+        url_params = {
             'callback': 'jQuery111102791574350174819_{}'.format(self._get_time()),
             'chn': 'game',
             'type': 'username',
@@ -149,14 +142,12 @@ class Register(object):
             'repassword_ht': password_ht,
             '_': self._get_time()
         }
-        pprint.pprint(url_querty)
+        # pprint.pprint(url_querty)
 
         # 构造url， 进行注册请求
-        url = 'https://passport.51.com/reg/qJsonpApi?'
-        for u in url_querty.items():
-            url += u[0]+'='+u[1]+'&'
-        print(url)
-        req = self.session.get(url, headers=headers_regist)
+        url = 'https://passport.51.com/reg/qJsonpApi'
+        req = self.session.get(url, headers=headers_regist, params=url_params)
+        print(req.cookies)
         if req.status_code == 200:
             print(req.text)
             print(msg_account)
