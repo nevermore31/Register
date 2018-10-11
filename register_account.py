@@ -5,6 +5,7 @@ import re
 import json
 import csv
 import os
+import socket
 
 from requests.exceptions import HTTPError
 from requests.utils import dict_from_cookiejar
@@ -54,12 +55,13 @@ headers_account = {
 
 
 class Register(object):
-    def __init__(self):
+    def __init__(self, ):
         self.s = requests.session()
         self.headers_regist = headers_regist
         self.headers_key_iv = headers_key_iv
         self.headers_account = headers_account
         self.aes = AesJs()
+        self.proxies = get_proxies()
 
     def validator(self, s):
         if len(s) != 32:
@@ -72,7 +74,7 @@ class Register(object):
 
     def get_key_iv(self):
         start_url = 'http://micro.51.com/client/reg/hy/?from=wdhy&site_css='
-        req = self.s.get(start_url, headers=headers_key_iv)
+        req = self.s.get(start_url, headers=headers_key_iv, proxies=self.proxies)
         cookies = dict_from_cookiejar(req.cookies)
         if req.status_code != 200:
             raise HTTPError
@@ -111,7 +113,7 @@ class Register(object):
             'chn': 'game',
             'user': str(account)
         }
-        req = self.s.post(url=url, headers=self.headers_account, data=data_)
+        req = self.s.post(url=url, headers=self.headers_account, data=data_,proxies=self.proxies)
         if req.status_code == 200:
             respons = json.loads(req.text)
             if respons['ret'] != 1:
@@ -151,14 +153,15 @@ class Register(object):
 
         # 构造url， 进行注册请求
         url = 'https://passport.51.com/reg/qJsonpApi'
-        req = self.s.get(url, headers=headers_regist, params=url_params)
+        req = self.s.get(url, headers=headers_regist, params=url_params,proxies=self.proxies)
         if req.status_code == 200:
             index_req = req.text.index('{')
             req_dict = json.loads(req.text[index_req:-2])
             if 'ret' in req_dict.keys():
                 # 如果注册成功直接返回账号密码
                 if req_dict['ret'] == 1:
-                    msg_account = {'account': account, 'password': pass_,}
+                    msg_account = {'account': account, 'password': pass_, 'proxies': self.proxies['http']}
+                    print(msg_account)
                     return msg_account
                 # 不成功再次调用自己
                 else:
@@ -166,14 +169,35 @@ class Register(object):
                     self.regist_for_account()
 
 
+def get_proxies():
+    """
+    获取ip地址
+    :return:
+    """
+    # http://h.etdaili.com/Users-whiteIpListNew.html?appid=662&appkey=1ea026ffe3b0ee3451708acd77632bbb  (获取接口白名单)
+    # http://h.etdaili.com/Users-whiteIpAddNew.html?appid=662&appkey=1ea026ffe3b0ee3451708acd77632bbb&whiteip=您的ip（多
+    # 个ip 请用英文逗号隔开）
+
+    api_url = 'http://47.106.160.121/Index-generate_api_url.html?packid=2&fa=0&qty=1&port=1&format=json&ss=5&css=&ipp' \
+              'ort=1&et=1&pro=&city='
+    req = requests.get(api_url)
+    if req.status_code == 200:
+        if req.json()['success'] == 'true':
+            ip = req.json()['data'][0]['IP']
+            proxies = {
+                'http': ip,
+                'https': ip,
+            }
+            print(proxies)
+            return proxies
+
+
 def write_to_csv(**kwargs):
     """
     :param kwargs: account, 账号 ， password 密码， proxies ip 地址（可能没有）
     :return:
     """
-    row = [kwargs['account'], kwargs['password'],time.strftime('%Y-%m-%d %H:%M:%S')]
-    if 'proxies' in kwargs.keys():
-        row.insert(2, kwargs['proxies'])
+    row = [kwargs['account'], kwargs['password'], kwargs['proxies'], time.strftime('%Y-%m-%d %H:%M:%S')]
     if os.path.exists('./账号文件夹/')is False:
         os.makedirs('./账号文件夹/')
     with open('./账号文件夹/account.csv', 'a+')as f:
@@ -190,9 +214,13 @@ def main(**kwargs):
     """
     if kwargs['count'] is None:
         count = 1
-    else: count = kwargs['count']
+    else:count = kwargs['count']
     for c_ in range(count):
         register = Register().regist_for_account()
-        write_to_csv(account=register['account'], password=register['password'])
+        write_to_csv(account=register['account'], password=register['password'], proxies=register['proxies'])
 
 
+def get_local_ip():
+    """ 获取本机公网ip ，没有就添加白名单"""
+    ip = requests.get('http://ip.42.pl/raw').text
+    return ip
