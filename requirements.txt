@@ -2,3 +2,4 @@ PyExecJS==1.5.1
 requests==2.9.1
 beautifulsoup4==4.6.3
 # 需配置 node 环境
+# 一键 安装python 以上环境   pip install -r requirements.txt
