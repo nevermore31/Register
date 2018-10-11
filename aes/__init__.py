@@ -26,11 +26,3 @@ class AesJs(object):
         # 相关参数
         gethl = execjs.compile(f).call('getHL', text)
         return gethl
-
-
-if __name__ == '__main__':
-    # +hFSERlJfKRRjuBWUxL9Qg==
-    js = AesJs().js_aesencrypt('123123', key='cf270b2a8a7c51e9f7efe9b89071f6e3', iv='1234577290ABCDEF1264147890ACAE45')
-    print(js)
-    js_2 = AesJs().js_gethl('xixihaha321')
-    print(js_2)
